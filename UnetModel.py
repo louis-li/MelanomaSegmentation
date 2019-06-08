@@ -74,10 +74,8 @@ class LayerNormalization(Layer):
         self.eps = eps
         super(LayerNormalization, self).__init__(**kwargs)
     def build(self, input_shape):
-        self.gamma = self.add_weight(name='gamma', shape=input_shape[-1:],
-                                     initializer=Ones(), trainable=True)
-        self.beta = self.add_weight(name='beta', shape=input_shape[-1:],
-                                    initializer=Zeros(), trainable=True)
+        self.gamma = self.add_weight(name='gamma', shape=input_shape[-1:], initializer=Ones(), trainable=True)
+        self.beta = self.add_weight(name='beta', shape=input_shape[-1:], initializer=Zeros(), trainable=True)
         super(LayerNormalization, self).build(input_shape)
     def call(self, x):
         mean = K.mean(x, axis=-1, keepdims=True)
@@ -201,7 +199,7 @@ def UnetModel():
     return model
     
 def FullUnetModel():
-    inputs = Input((img_rows, img_cols,1))
+    inputs = Input((img_rows, img_cols,3))
     conv1 = Conv2D(64, (3, 3), activation="relu", padding="same")(inputs)
     conv1 = Conv2D(64, (3, 3), activation="relu", padding="same")(conv1)
     pool1 = MaxPooling2D(pool_size=(2, 2))(conv1)
@@ -241,7 +239,7 @@ def FullUnetModel():
 
     model = Model(input=inputs, output=conv10)
 
-    model.compile(optimizer=Adam(lr=1e-4), loss=jaccard_coef_loss, metrics=[jaccard_coef])
+    model.compile(optimizer=Adam(lr=1e-5), loss=jaccard_coef_loss, metrics=[jaccard_coef])
 
     return model
 
@@ -467,7 +465,7 @@ def BiggerLeakyUnetModel():
 
     model = Model(input=inputs, output=output)
 
-    model.compile(optimizer=Adam(lr=5e-5), loss=fl_loss, metrics=[jaccard_coef])
+    model.compile(optimizer=Adam(lr=5e-5), loss=jaccard_coef_loss, metrics=[jaccard_coef])
 
     return model
     
@@ -529,10 +527,10 @@ def BiggerLeakyUnetModelWithBatchnorm():
     acti7 = LeakyReLU(alpha=0.001)(norm7)
 
     right_up6 = concatenate([UpSampling2D(size=(2, 2))(acti7), acti6], axis=3)
-    right_conv6 = Conv2D(512, (3, 3), padding="same")(right_up6)
+    right_conv6 = Conv2D(1024, (3, 3), padding="same")(right_up6)
     right_norm6 = BatchNormalization()(right_conv6)
     right_acti6 = LeakyReLU(alpha=0.001)(right_norm6)
-    right_conv6 = Conv2D(512, (3, 3), padding="same")(right_acti6)
+    right_conv6 = Conv2D(1024, (3, 3), padding="same")(right_acti6)
     right_norm6 = BatchNormalization()(right_conv6)
     right_acti6 = LeakyReLU(alpha=0.001)(right_norm6)
 
@@ -644,10 +642,125 @@ def BiggerLeakyUnetModelWithLayernorm():
     acti7 = LeakyReLU(alpha=0.001)(norm7)
 
     right_up6 = concatenate([UpSampling2D(size=(2, 2))(acti7), acti6], axis=3)
-    right_conv6 = Conv2D(512, (3, 3), padding="same")(right_up6)
+    right_conv6 = Conv2D(1024, (3, 3), padding="same")(right_up6)
     right_norm6 = LayerNormalization()(right_conv6)
     right_acti6 = LeakyReLU(alpha=0.001)(right_norm6)
-    right_conv6 = Conv2D(512, (3, 3), padding="same")(right_acti6)
+    right_conv6 = Conv2D(1024, (3, 3), padding="same")(right_acti6)
+    right_norm6 = LayerNormalization()(right_conv6)
+    right_acti6 = LeakyReLU(alpha=0.001)(right_norm6)
+
+    right_up5 = concatenate([UpSampling2D(size=(2, 2))(right_acti6), acti5], axis=3)
+    right_conv5 = Conv2D(512, (3, 3), padding="same")(right_up5)
+    right_norm5 = LayerNormalization()(right_conv5)
+    right_acti5 = LeakyReLU(alpha=0.001)(right_norm5)
+    right_conv5 = Conv2D(512, (3, 3), padding="same")(right_acti5)
+    right_norm5 = LayerNormalization()(right_conv5)
+    right_acti5 = LeakyReLU(alpha=0.001)(right_norm5)
+
+    right_up4 = concatenate([UpSampling2D(size=(2, 2))(right_acti5), acti4], axis=3)
+    right_conv4 = Conv2D(256, (3, 3), padding="same")(right_up4)
+    right_norm4 = LayerNormalization()(right_conv4)
+    right_acti4 = LeakyReLU(alpha=0.001)(right_norm4)
+    right_conv4 = Conv2D(256, (3, 3), padding="same")(right_acti4)
+    right_norm4 = LayerNormalization()(right_conv4)
+    right_acti4 = LeakyReLU(alpha=0.001)(right_norm4)
+
+    right_up3 = concatenate([UpSampling2D(size=(2, 2))(right_acti4), acti3], axis=3)
+    right_conv3 = Conv2D(128, (3, 3), padding="same")(right_up3)
+    right_norm3 = LayerNormalization()(right_conv3)
+    right_acti3 = LeakyReLU(alpha=0.001)(right_norm3)
+    right_conv3 = Conv2D(128, (3, 3), padding="same")(right_acti3)
+    right_norm3 = LayerNormalization()(right_conv3)
+    right_acti3 = LeakyReLU(alpha=0.001)(right_norm3)
+
+    right_up2 = concatenate([UpSampling2D(size=(2, 2))(right_acti3), acti2], axis=3)
+    right_conv2 = Conv2D(64, (3, 3), padding="same")(right_up2)
+    right_norm2 = LayerNormalization()(right_conv2)
+    right_acti2 = LeakyReLU(alpha=0.001)(right_norm2)
+    right_conv2 = Conv2D(64, (3, 3), padding="same")(right_acti2)
+    right_norm2 = LayerNormalization()(right_conv2)
+    right_acti2 = LeakyReLU(alpha=0.001)(right_norm2)
+
+    right_up1 = concatenate([UpSampling2D(size=(2, 2))(right_acti2), acti1], axis=3)
+    right_conv1 = Conv2D(32, (3, 3), padding="same")(right_up1)
+    right_norm1 = LayerNormalization()(right_conv1)
+    right_acti1 = LeakyReLU(alpha=0.001)(right_norm1)
+    right_conv1 = Conv2D(32, (3, 3), padding="same")(right_acti1)
+    right_norm1 = LayerNormalization()(right_conv1)
+    right_acti1 = LeakyReLU(alpha=0.001)(right_norm1)
+
+    output1 = Conv2D(1, (1, 1))(right_acti1)
+    output_norm = LayerNormalization()(output1)
+    output = Activation("sigmoid")(output_norm)
+
+    model = Model(input=inputs, output=output)
+
+    model.compile(optimizer=Adam(lr=5e-5), loss=jaccard_coef_loss, metrics=[jaccard_coef])
+
+    return model
+
+def BiggerLeakyUnetModelWithBatchLayernorm():
+    inputs = Input((img_rows, img_cols,3))
+    conv1 = Conv2D(32, (3, 3), padding="same")(inputs)
+    norm1 = BatchNormalization()(conv1)
+    acti1 = LeakyReLU(alpha=0.001)(norm1)
+    conv1 = Conv2D(32, (3, 3), padding="same")(acti1)
+    norm1 = BatchNormalization()(conv1)
+    acti1 = LeakyReLU(alpha=0.001)(norm1)
+    pool1 = MaxPooling2D(pool_size=(2, 2))(acti1)
+
+    conv2 = Conv2D(64, (3, 3), padding="same")(pool1)
+    norm2 = BatchNormalization()(conv2)
+    acti2 = LeakyReLU(alpha=0.001)(norm2)
+    conv2 = Conv2D(64, (3, 3), padding="same")(acti2)
+    norm2 = BatchNormalization()(conv2)
+    acti2 = LeakyReLU(alpha=0.001)(norm2)
+    pool2 = MaxPooling2D(pool_size=(2, 2))(acti2)
+
+    conv3 = Conv2D(128, (3, 3), padding="same")(pool2)
+    norm3 = BatchNormalization()(conv3)
+    acti3 = LeakyReLU(alpha=0.001)(norm3)
+    conv3 = Conv2D(128, (3, 3), padding="same")(acti3)
+    norm3 = BatchNormalization()(conv3)
+    acti3 = LeakyReLU(alpha=0.001)(norm3)
+    pool3 = MaxPooling2D(pool_size=(2, 2))(acti3)
+
+    conv4 = Conv2D(256, (3, 3), padding="same")(pool3)
+    norm4 = BatchNormalization()(conv4)
+    acti4 = LeakyReLU(alpha=0.001)(norm4)
+    conv4 = Conv2D(256, (3, 3), padding="same")(acti4)
+    norm4 = BatchNormalization()(conv4)
+    acti4 = LeakyReLU(alpha=0.001)(norm4)
+    pool4 = MaxPooling2D(pool_size=(2, 2))(acti4)
+
+    conv5 = Conv2D(512, (3, 3), padding="same")(pool4)
+    norm5 = LayerNormalization()(conv5)
+    acti5 = LeakyReLU(alpha=0.001)(norm5)
+    conv5 = Conv2D(512, (3, 3), padding="same")(acti5)
+    norm5 = LayerNormalization()(conv5)
+    acti5 = LeakyReLU(alpha=0.001)(norm5)
+    pool5 = MaxPooling2D(pool_size=(2, 2))(acti5)
+
+    conv6 = Conv2D(1024, (3, 3), padding="same")(pool5)
+    norm6 = BatchNormalization()(conv6)
+    acti6 = LeakyReLU(alpha=0.001)(norm6)
+    conv6 = Conv2D(1024, (3, 3), padding="same")(acti6)
+    norm6 = BatchNormalization()(conv6)
+    acti6 = LeakyReLU(alpha=0.001)(norm6)
+    pool6 = MaxPooling2D(pool_size=(2, 2))(acti6)
+    
+    conv7 = Conv2D(2048, (3, 3), padding="same")(pool6)
+    norm7 = BatchNormalization()(conv7)
+    acti7 = LeakyReLU(alpha=0.001)(norm7)
+    conv7 = Conv2D(2048, (3, 3), padding="same")(acti7)
+    norm7 = BatchNormalization()(conv7)
+    acti7 = LeakyReLU(alpha=0.001)(norm7)
+
+    right_up6 = concatenate([UpSampling2D(size=(2, 2))(acti7), acti6], axis=3)
+    right_conv6 = Conv2D(1024, (3, 3), padding="same")(right_up6)
+    right_norm6 = LayerNormalization()(right_conv6)
+    right_acti6 = LeakyReLU(alpha=0.001)(right_norm6)
+    right_conv6 = Conv2D(1024, (3, 3), padding="same")(right_acti6)
     right_norm6 = LayerNormalization()(right_conv6)
     right_acti6 = LeakyReLU(alpha=0.001)(right_norm6)
 
@@ -798,9 +911,7 @@ def plotTrainigGraph(hist):
     val_coef = np.array(hist['val_jaccard_coef'])
     print("Training co-effiency    : {};\nValidation co-effiency : {}".format(coef[coef==max(coef)][0], val_coef[np.argmax(coef)]))
 
-def predictTestSet(model_location):
-    model.load_weights(model_location)
-
+def predictTestSet(model, img_rows, img_cols):
     file_names = next(os.walk(test_data_dir))[2]
     scores = []
     for file in file_names:
@@ -837,7 +948,44 @@ def predictTestSet(model_location):
         #print(scores[i])
             f.write("{},{}\n".format(scores[i][0], scores[i][1]))
 
-def showPredictResult(file, model):
+def predictValidationSet(model, img_rows, img_cols):
+    file_names = next(os.walk(test_data_dir))[2]
+    scores = []
+    for file in file_names:
+        grey_img = load_img(os.path.join(val_data_dir,file), target_size=(img_rows, img_cols), grayscale=False)
+        mask_img = load_img(os.path.join(val_data_mask_dir,file.split('.')[0]+"_segmentation.png"), 
+                            target_size=(img_rows, img_cols), grayscale=True)
+        img = img_to_array(grey_img)
+        img_mask = img_to_array(mask_img)
+
+        #Preprocess image mask
+        #img_mask = img_mask /255
+        #img_mask[img_mask > 0.5] = 1
+        #img_mask[img_mask <= 0.5] = 0
+        #Preprocess images
+        #mean = np.mean(img)  # mean for data centering
+        #std = np.std(img)  # std for data normalization
+        #img -= mean
+        #img /= std
+        img, img_mask = normalizeData(img, img_mask)
+        img = np.reshape(img,(1,)+img.shape)
+
+        pred = model.predict([img])
+        sess = tf.Session()
+        score = sess.run(jaccard_coef(img_mask, pred))
+        print("{} -- jaccard index: {}".format(file,score))
+        scores.append([file,score])
+
+        #result_img = array_to_img(pred[0] * 255 )
+        #result_img.save(os.path.join(test_data_pred_dir, file.split('.')[0] + '_predict.jpg'))
+
+    with open("report_valiate_result.csv", 'w') as f:
+        f.write("filename, jaccard_index\n")
+        for i in range(len(scores)):
+        #print(scores[i])
+            f.write("{},{}\n".format(scores[i][0], scores[i][1]))
+
+def showPredictResult(file, model, img_rows, img_cols):
     #file = 'data/train/images/ISIC_0000000.jpg'
     grey_img = load_img(os.path.join(test_data_dir,file), target_size=(img_rows, img_cols), grayscale=False)
     mask_img = load_img(os.path.join(test_data_mask_dir,file.split('.')[0]+"_segmentation.png"), 
